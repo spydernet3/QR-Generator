@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure QR Code Generator - Version 3.3</title>
+    <title>Secure QR Code Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,7 +57,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Secure QR Code Generator - Version 3.3</h1>
+        <h1>Secure QR Code Generator</h1>
         <input type="password" id="qrPassword" placeholder="Enter password for encryption">
         <div id="inputContainer">
             <div class="input-group">
@@ -93,30 +93,20 @@
     </div>
 
     <script>
-        function processQRCodeContent(content, password, color, size) {
-    try {
-        // Encrypt the content using the provided password
-        const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
-        createQRCode(encryptedContent, color, size);
-    } catch (error) {
-        console.error("Encryption error:", error);
-        alert("Error encrypting content. Please try again.");
-    }
-}
-
-function promptForDecryption(encryptedContent) {
-    const password = prompt("Enter the password to view the content:");
-    try {
-        const decryptedContent = decryptContent(encryptedContent, password);
-        if (decryptedContent) {
-            alert("Decrypted Content: " + decryptedContent);
+        function addContentField() {
+            const newInputGroup = document.createElement('div');
+            newInputGroup.classList.add('input-group');
+            newInputGroup.innerHTML = `
+                <input type="text" placeholder="Enter text or URL" class="qrContent">
+                <input type="file" accept="image/*,video/*,.pdf,.doc,.docx" class="qrFile">
+                <button onclick="removeContentField(this)">-</button>
+            `;
+            document.getElementById('inputContainer').appendChild(newInputGroup);
         }
-    } catch (error) {
-        console.error("Decryption error:", error);
-        alert("Incorrect password or decryption error.");
-    }
-}
 
+        function removeContentField(button) {
+            button.parentElement.remove();
+        }
 
         async function generateQRCode() {
             const password = document.getElementById('qrPassword').value;
@@ -145,7 +135,7 @@ function promptForDecryption(encryptedContent) {
 
             try {
                 const contentArray = await Promise.all(contentPromises);
-                const combinedContent = contentArray.join("\n");
+                const combinedContent = contentArray.filter(content => content).join("\n");
                 processQRCodeContent(combinedContent, password, textColor, textSize);
             } catch (error) {
                 console.error("Error processing content:", error);
