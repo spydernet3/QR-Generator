@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure QR Code Generator</title>
+    <title>Secure QR Code Generator - Version 3</title>
     <style>
+        /* Styling for layout */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -43,24 +44,20 @@
             margin-top: 10px;
         }
     </style>
-    <!-- Embed the qrious library and CryptoJS for encryption -->
+    <!-- Libraries for QR generation and encryption -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Secure QR Code Generator</h1>
+        <h1>Secure QR Code Generator - Version 3</h1>
 
-        <!-- Input for Text or URL -->
+        <!-- Input fields -->
         <input type="text" id="qrText" placeholder="Enter text or URL">
-        
-        <!-- Password Input -->
         <input type="password" id="qrPassword" placeholder="Enter password for encryption">
-        
-        <!-- File Uploads -->
         <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx">
         
-        <!-- Text Customization -->
+        <!-- Text customization options -->
         <select id="textColor">
             <option value="black">Black</option>
             <option value="blue">Blue</option>
@@ -74,7 +71,7 @@
         
         <button onclick="generateQRCode()">Generate QR Code</button>
         
-        <!-- Table Layout for QR Codes -->
+        <!-- Table for generated QR codes -->
         <table>
             <thead>
                 <tr>
@@ -96,80 +93,93 @@
             const textColor = document.getElementById('textColor').value;
             const textSize = document.getElementById('textSize').value;
 
+            // Step 1: Check for Password Entry
             if (!qrPassword) {
                 alert("Please enter a password to protect the QR code content.");
                 return;
             }
 
-            // Initialize content for QR code
+            // Step 2: Initialize Content
             let qrContent = qrTextInput;
 
-            // Handle file input by converting to base64 if a file is uploaded
+            // Step 3: Handle File Input
             if (fileInput) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const fileContent = e.target.result;
-                    qrContent = fileContent;
-                    const encryptedContent = encryptContent(qrContent, qrPassword);
-                    createQRCode(encryptedContent, textColor, textSize);
+                    qrContent = e.target.result;
+                    processQRCodeContent(qrContent, qrPassword, textColor, textSize);
+                };
+                reader.onerror = function() {
+                    console.error("Error reading file:", reader.error);
+                    alert("Error reading file. Please try again.");
                 };
                 reader.readAsDataURL(fileInput);
             } else {
-                // Encrypt the text content directly
-                const encryptedContent = encryptContent(qrContent, qrPassword);
-                createQRCode(encryptedContent, textColor, textSize);
+                processQRCodeContent(qrContent, qrPassword, textColor, textSize);
             }
         }
 
-        function encryptContent(content, password) {
-            return CryptoJS.AES.encrypt(content, password).toString();
-        }
-
-        function decryptContent(encryptedContent, password) {
+        function processQRCodeContent(content, password, color, size) {
             try {
-                const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
-                return bytes.toString(CryptoJS.enc.Utf8);
-            } catch (e) {
-                alert("Incorrect password.");
-                return null;
+                // Step 4: Encrypt Content
+                const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
+                
+                // Step 5: Generate QR Code with Encrypted Content
+                createQRCode(encryptedContent, color, size);
+            } catch (error) {
+                console.error("Encryption error:", error);
+                alert("Error encrypting content. Please try again.");
             }
         }
 
         function createQRCode(content, color, size) {
-            const qr = new QRious({
-                value: content,
-                size: parseInt(size) * 10,
-                level: 'L',
-            });
+            try {
+                const qr = new QRious({
+                    value: content,
+                    size: parseInt(size) * 10,
+                    level: 'L',
+                });
 
-            // Display the QR code in a table format
-            const qrTableBody = document.getElementById('qrTableBody');
-            const row = qrTableBody.insertRow();
-            const cell1 = row.insertCell(0);
-            const cell2 = row.insertCell(1);
+                // Step 6: Insert QR Code into Table
+                const qrTableBody = document.getElementById('qrTableBody');
+                const row = qrTableBody.insertRow();
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
 
-            // Customize cell content and style
-            cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
-            cell1.style.color = color;
-            cell1.style.fontSize = `${size}px`;
+                // Step 7: Display Content
+                cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
+                cell1.style.color = color;
+                cell1.style.fontSize = `${size}px`;
 
-            // Append QR Code to cell
-            const canvas = document.createElement('canvas');
-            qr.canvas.toDataURL(); // convert QR code to image format
-            canvas.width = qr.size;
-            canvas.height = qr.size;
-            canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
-            cell2.appendChild(canvas);
+                // Step 8: Attach QR Code Canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = qr.size;
+                canvas.height = qr.size;
+                canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
+                cell2.appendChild(canvas);
+            } catch (error) {
+                console.error("QR code generation error:", error);
+                alert("Error generating QR code. Please try again.");
+            }
         }
 
         function promptForDecryption(encryptedContent) {
             const password = prompt("Enter the password to view the content:");
-            const decryptedContent = decryptContent(encryptedContent, password);
-            if (decryptedContent) {
-                alert("Decrypted Content: " + decryptedContent);
+            try {
+                const decryptedContent = decryptContent(encryptedContent, password);
+                if (decryptedContent) {
+                    alert("Decrypted Content: " + decryptedContent);
+                }
+            } catch (error) {
+                console.error("Decryption error:", error);
+                alert("Incorrect password or decryption error.");
             }
+        }
+
+        function decryptContent(encryptedContent, password) {
+            const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
+            return bytes.toString(CryptoJS.enc.Utf8);
         }
     </script>
 </body>
-          </html>
-          
+</html>
