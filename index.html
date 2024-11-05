@@ -13,31 +13,38 @@
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
+            padding: 10px; /* Added padding for mobile view */
+            box-sizing: border-box; /* Added box-sizing for consistent element sizing */
         }
         .container {
             text-align: center;
             width: 100%;
             max-width: 600px;
+            margin: auto; /* Center container in mobile view */
         }
         input[type="text"], input[type="file"], input[type="password"] {
             width: 100%;
-            padding: 8px;
+            padding: 10px; /* Increased padding for easier touch */
             margin-bottom: 10px;
             font-size: 16px;
+            box-sizing: border-box; /* Ensures padding is included in width */
         }
         select, button {
-            padding: 8px;
+            padding: 10px; /* Increased padding for easier touch */
             font-size: 16px;
-            margin: 5px;
+            margin: 5px 0; /* Adjusted margin for mobile */
+            width: 100%; /* Make buttons and selects full width */
         }
         .input-group {
             display: flex;
-            margin-bottom: 5px;
+            flex-direction: column; /* Stack inputs vertically for better mobile usability */
+            margin-bottom: 10px; /* Increased margin for spacing */
         }
         .input-group button {
             padding: 5px;
             font-size: 14px;
-            margin-left: 5px;
+            margin-left: 0; /* Removed left margin for vertical stacking */
+            width: 100%; /* Make the button full width */
         }
         table {
             margin-top: 20px;
@@ -50,6 +57,19 @@
         }
         canvas {
             margin-top: 10px;
+            width: 100%; /* Make canvas full width */
+            max-width: 300px; /* Limit the width for better viewing */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 24px; /* Adjust heading size for small screens */
+            }
+            input[type="text"], input[type="file"], input[type="password"],
+            select, button {
+                font-size: 14px; /* Adjust font size for inputs on mobile */
+            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
@@ -135,7 +155,7 @@
 
             try {
                 const contentArray = await Promise.all(contentPromises);
-                const combinedContent = contentArray.filter(content => content).join("\n");
+                const combinedContent = contentArray.join("\n");
                 processQRCodeContent(combinedContent, password, textColor, textSize);
             } catch (error) {
                 console.error("Error processing content:", error);
