@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure QR Code Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+        input[type="text"], input[type="file"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        select, button {
+            padding: 8px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        canvas {
+            margin-top: 10px;
+        }
+    </style>
+    <!-- Embed the qrious library and CryptoJS for encryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Secure QR Code Generator</h1>
+
+        <!-- Input for Text or URL -->
+        <input type="text" id="qrText" placeholder="Enter text or URL">
+        
+        <!-- Password Input -->
+        <input type="password" id="qrPassword" placeholder="Enter password for encryption">
+        
+        <!-- File Uploads -->
+        <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx">
+        
+        <!-- Text Customization -->
+        <select id="textColor">
+            <option value="black">Black</option>
+            <option value="blue">Blue</option>
+            <option value="red">Red</option>
+        </select>
+        <select id="textSize">
+            <option value="10">Small</option>
+            <option value="20">Medium</option>
+            <option value="30">Large</option>
+        </select>
+        
+        <button onclick="generateQRCode()">Generate QR Code</button>
+        
+        <!-- Table Layout for QR Codes -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Content</th>
+                    <th>QR Code</th>
+                </tr>
+            </thead>
+            <tbody id="qrTableBody">
+                <!-- QR codes will be displayed here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function generateQRCode() {
+            const qrTextInput = document.getElementById('qrText').value;
+            const qrPassword = document.getElementById('qrPassword').value;
+            const fileInput = document.getElementById('fileInput').files[0];
+            const textColor = document.getElementById('textColor').value;
+            const textSize = document.getElementById('textSize').value;
+
+            if (!qrPassword) {
+                alert("Please enter a password to protect the QR code content.");
+                return;
+            }
+
+            // Initialize content for QR code
+            let qrContent = qrTextInput;
+
+            // Handle file input by converting to base64 if a file is uploaded
+            if (fileInput) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const fileContent = e.target.result;
+                    qrContent = fileContent;
+                    const encryptedContent = encryptContent(qrContent, qrPassword);
+                    createQRCode(encryptedContent, textColor, textSize);
+                };
+                reader.readAsDataURL(fileInput);
+            } else {
+                // Encrypt the text content directly
+                const encryptedContent = encryptContent(qrContent, qrPassword);
+                createQRCode(encryptedContent, textColor, textSize);
+            }
+        }
+
+        function encryptContent(content, password) {
+            return CryptoJS.AES.encrypt(content, password).toString();
+        }
+
+        function decryptContent(encryptedContent, password) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch (e) {
+                alert("Incorrect password.");
+                return null;
+            }
+        }
+
+        function createQRCode(content, color, size) {
+            const qr = new QRious({
+                value: content,
+                size: parseInt(size) * 10,
+                level: 'L',
+            });
+
+            // Display the QR code in a table format
+            const qrTableBody = document.getElementById('qrTableBody');
+            const row = qrTableBody.insertRow();
+            const cell1 = row.insertCell(0);
+            const cell2 = row.insertCell(1);
+
+            // Customize cell content and style
+            cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
+            cell1.style.color = color;
+            cell1.style.fontSize = `${size}px`;
+
+            // Append QR Code to cell
+            const canvas = document.createElement('canvas');
+            qr.canvas.toDataURL(); // convert QR code to image format
+            canvas.width = qr.size;
+            canvas.height = qr.size;
+            canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
+            cell2.appendChild(canvas);
+        }
+
+        function promptForDecryption(encryptedContent) {
+            const password = prompt("Enter the password to view the content:");
+            const decryptedContent = decryptContent(encryptedContent, password);
+            if (decryptedContent) {
+                alert("Decrypted Content: " + decryptedContent);
+            }
+        }
+    </script>
+</body>
+          </html>
+          
