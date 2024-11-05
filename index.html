@@ -8,9 +8,39 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.0/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #qr-code { margin: 20px 0; }
-        .content-container { margin: 10px 0; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        #qr-code {
+            margin: 20px 0;
+        }
+        .content-container {
+            margin: 10px 0;
+        }
+        input[type="text"], input[type="password"], input[type="color"], input[type="number"] {
+            padding: 10px;
+            margin-right: 5px;
+            width: 200px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -86,28 +116,6 @@
                 link.href = qrCode.toDataURL();
                 link.click();
             });
-        }
-
-        // Function to prompt for password to decrypt
-        function promptForDecryption(encryptedContent) {
-            const password = prompt("Enter the password to view the content:");
-            try {
-                const decryptedContent = decryptContent(encryptedContent, password);
-                if (decryptedContent) {
-                    alert("Decrypted Content: " + decryptedContent);
-                }
-            } catch (error) {
-                console.error("Decryption error:", error);
-                alert("Incorrect password or decryption error.");
-            }
-        }
-
-        // Function to decrypt content
-        function decryptContent(encryptedContent, password) {
-            const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
-            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-            if (!decrypted) throw new Error('Decryption failed');
-            return JSON.parse(decrypted);
         }
     </script>
 </body>
