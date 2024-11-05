@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure QR Code Generator - Version 3.2</title>
+    <title>Secure QR Code Generator - Version 3.3</title>
     <style>
-        /* Styling for layout */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -53,18 +52,13 @@
             margin-top: 10px;
         }
     </style>
-    <!-- Libraries for QR generation and encryption -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Secure QR Code Generator - Version 3.2</h1>
-
-        <!-- Password Input -->
+        <h1>Secure QR Code Generator - Version 3.3</h1>
         <input type="password" id="qrPassword" placeholder="Enter password for encryption">
-        
-        <!-- Dynamic Content Inputs -->
         <div id="inputContainer">
             <div class="input-group">
                 <input type="text" placeholder="Enter text or URL" class="qrContent">
@@ -73,7 +67,6 @@
             </div>
         </div>
         
-        <!-- Text customization options -->
         <select id="textColor">
             <option value="black">Black</option>
             <option value="blue">Blue</option>
@@ -87,23 +80,20 @@
         
         <button onclick="generateQRCode()">Generate QR Code</button>
         
-        <!-- Table for generated QR codes -->
         <table>
             <thead>
                 <tr>
                     <th>Content</th>
                     <th>QR Code</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="qrTableBody">
-                <!-- QR codes will be displayed here -->
-            </tbody>
+            <tbody id="qrTableBody"></tbody>
         </table>
     </div>
 
     <script>
         function addContentField() {
-            // Create a new input group with text and file input
             const newInputGroup = document.createElement('div');
             newInputGroup.classList.add('input-group');
             newInputGroup.innerHTML = `
@@ -115,7 +105,6 @@
         }
 
         function removeContentField(button) {
-            // Remove the input group associated with the remove button
             button.parentElement.remove();
         }
 
@@ -129,7 +118,6 @@
                 return;
             }
 
-            // Gather all content from text inputs and file inputs
             const contentPromises = Array.from(document.querySelectorAll('.input-group')).map(async group => {
                 const textInput = group.querySelector('.qrContent').value;
                 const fileInput = group.querySelector('.qrFile').files[0];
@@ -157,7 +145,6 @@
 
         function processQRCodeContent(content, password, color, size) {
             try {
-                // Encrypt the combined content
                 const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
                 createQRCode(encryptedContent, color, size);
             } catch (error) {
@@ -174,11 +161,11 @@
                     level: 'L',
                 });
 
-                // Display the QR code in a new row
                 const qrTableBody = document.getElementById('qrTableBody');
                 const row = qrTableBody.insertRow();
                 const cell1 = row.insertCell(0);
                 const cell2 = row.insertCell(1);
+                const cell3 = row.insertCell(2);
 
                 cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
                 cell1.style.color = color;
@@ -189,6 +176,17 @@
                 canvas.height = qr.size;
                 canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
                 cell2.appendChild(canvas);
+
+                // Add Download and Delete buttons
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = "Download";
+                downloadBtn.onclick = () => downloadQRCode(canvas);
+                cell3.appendChild(downloadBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = "Delete";
+                deleteBtn.onclick = () => row.remove();
+                cell3.appendChild(deleteBtn);
             } catch (error) {
                 console.error("QR code generation error:", error);
                 alert("Error generating QR code. Please try again.");
@@ -211,6 +209,13 @@
         function decryptContent(encryptedContent, password) {
             const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
             return bytes.toString(CryptoJS.enc.Utf8);
+        }
+
+        function downloadQRCode(canvas) {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png");
+            link.download = "QRCode.png";
+            link.click();
         }
     </script>
 </body>
