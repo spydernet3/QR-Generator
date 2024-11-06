@@ -13,38 +13,31 @@
             flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            padding: 10px; /* Added padding for mobile view */
-            box-sizing: border-box; /* Added box-sizing for consistent element sizing */
         }
         .container {
             text-align: center;
             width: 100%;
             max-width: 600px;
-            margin: auto; /* Center container in mobile view */
         }
         input[type="text"], input[type="file"], input[type="password"] {
             width: 100%;
-            padding: 10px; /* Increased padding for easier touch */
+            padding: 8px;
             margin-bottom: 10px;
             font-size: 16px;
-            box-sizing: border-box; /* Ensures padding is included in width */
         }
         select, button {
-            padding: 10px; /* Increased padding for easier touch */
+            padding: 8px;
             font-size: 16px;
-            margin: 5px 0; /* Adjusted margin for mobile */
-            width: 100%; /* Make buttons and selects full width */
+            margin: 5px;
         }
         .input-group {
             display: flex;
-            flex-direction: column; /* Stack inputs vertically for better mobile usability */
-            margin-bottom: 10px; /* Increased margin for spacing */
+            margin-bottom: 5px;
         }
         .input-group button {
             padding: 5px;
             font-size: 14px;
-            margin-left: 0; /* Removed left margin for vertical stacking */
-            width: 100%; /* Make the button full width */
+            margin-left: 5px;
         }
         table {
             margin-top: 20px;
@@ -57,19 +50,6 @@
         }
         canvas {
             margin-top: 10px;
-            width: 100%; /* Make canvas full width */
-            max-width: 300px; /* Limit the width for better viewing */
-            height: auto; /* Maintain aspect ratio */
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 24px; /* Adjust heading size for small screens */
-            }
-            input[type="text"], input[type="file"], input[type="password"],
-            select, button {
-                font-size: 14px; /* Adjust font size for inputs on mobile */
-            }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
@@ -166,7 +146,8 @@
         function processQRCodeContent(content, password, color, size) {
             try {
                 const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
-                createQRCode(encryptedContent, color, size);
+                const finalContent = `ENC:${encryptedContent}`;  // Adding prefix to indicate encryption
+                createQRCode(finalContent, color, size);
             } catch (error) {
                 console.error("Encryption error:", error);
                 alert("Error encrypting content. Please try again.");
@@ -214,15 +195,23 @@
         }
 
         function promptForDecryption(encryptedContent) {
-            const password = prompt("Enter the password to view the content:");
-            try {
-                const decryptedContent = decryptContent(encryptedContent, password);
-                if (decryptedContent) {
-                    alert("Decrypted Content: " + decryptedContent);
+            if (encryptedContent.startsWith("ENC:")) {
+                const encryptedText = encryptedContent.replace("ENC:", "");
+                const password = prompt("Enter password to decrypt the content:");
+
+                if (password) {
+                    try {
+                        const decrypted = decryptContent(encryptedText, password);
+                        alert("Decrypted content: " + decrypted);
+                    } catch (error) {
+                        alert("Incorrect password or decryption failed.");
+                    }
+                } else {
+                    alert("No password entered. Cannot decrypt content.");
                 }
-            } catch (error) {
-                console.error("Decryption error:", error);
-                alert("Incorrect password or decryption error.");
+            } else {
+                // If no "ENC:" prefix, content is not encrypted
+                alert("Scanned content: " + encryptedContent);
             }
         }
 
