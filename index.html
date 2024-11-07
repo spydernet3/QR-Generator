@@ -5,52 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure QR Code Generator</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            width: 100%;
-            max-width: 600px;
-        }
-        input[type="text"], input[type="file"], input[type="password"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        select, button {
-            padding: 8px;
-            font-size: 16px;
-            margin: 5px;
-        }
-        .input-group {
-            display: flex;
-            margin-bottom: 5px;
-        }
-        .input-group button {
-            padding: 5px;
-            font-size: 14px;
-            margin-left: 5px;
-        }
-        table {
-            margin-top: 20px;
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
-        canvas {
-            margin-top: 10px;
-        }
+        /* Existing CSS */
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -66,17 +21,6 @@
                 <button onclick="addContentField()">+</button>
             </div>
         </div>
-        
-        <select id="textColor">
-            <option value="black">Black</option>
-            <option value="blue">Blue</option>
-            <option value="red">Red</option>
-        </select>
-        <select id="textSize">
-            <option value="10">Small</option>
-            <option value="20">Medium</option>
-            <option value="30">Large</option>
-        </select>
         
         <button onclick="generateQRCode()">Generate QR Code</button>
         
@@ -110,8 +54,6 @@
 
         async function generateQRCode() {
             const password = document.getElementById('qrPassword').value;
-            const textColor = document.getElementById('textColor').value;
-            const textSize = document.getElementById('textSize').value;
 
             if (!password) {
                 alert("Please enter a password to protect the QR code content.");
@@ -136,28 +78,28 @@
             try {
                 const contentArray = await Promise.all(contentPromises);
                 const combinedContent = contentArray.join("\n");
-                processQRCodeContent(combinedContent, password, textColor, textSize);
+                processQRCodeContent(combinedContent, password);
             } catch (error) {
                 console.error("Error processing content:", error);
                 alert("Error processing content. Please try again.");
             }
         }
 
-        function processQRCodeContent(content, password, color, size) {
+        function processQRCodeContent(content, password) {
             try {
-                const encryptedContent = "ENC:" + CryptoJS.AES.encrypt(content, password).toString();
-                createQRCode(encryptedContent, color, size);
+                const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
+                createQRCode(encryptedContent);
             } catch (error) {
                 console.error("Encryption error:", error);
                 alert("Error encrypting content. Please try again.");
             }
         }
 
-        function createQRCode(content, color, size) {
+        function createQRCode(content) {
             try {
                 const qr = new QRious({
-                    value: content,
-                    size: parseInt(size) * 10,
+                    value: `PROMPT:${content}`,
+                    size: 200,
                     level: 'L',
                 });
 
@@ -168,8 +110,6 @@
                 const cell3 = row.insertCell(2);
 
                 cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
-                cell1.style.color = color;
-                cell1.style.fontSize = `${size}px`;
 
                 const canvas = document.createElement('canvas');
                 canvas.width = qr.size;
@@ -193,26 +133,15 @@
         }
 
         function promptForDecryption(encryptedContent) {
-            if (encryptedContent.startsWith("ENC:")) {
-                const encryptedText = encryptedContent.replace("ENC:", "");
-                const password = prompt("Enter password to decrypt the content:");
-
-                if (password) {
-                    try {
-                        const decrypted = decryptContent(encryptedText, password);
-                        if (decrypted) {
-                            alert("Decrypted content: " + decrypted);
-                        } else {
-                            alert("Incorrect password or decryption failed.");
-                        }
-                    } catch (error) {
-                        alert("Error during decryption. Please try again.");
-                    }
-                } else {
-                    alert("No password entered. Cannot decrypt content.");
+            const password = prompt("Enter the password to view the content:");
+            try {
+                const decryptedContent = decryptContent(encryptedContent, password);
+                if (decryptedContent) {
+                    alert("Decrypted Content: " + decryptedContent);
                 }
-            } else {
-                alert("Scanned content: " + encryptedContent);
+            } catch (error) {
+                console.error("Decryption error:", error);
+                alert("Incorrect password or decryption error.");
             }
         }
 
