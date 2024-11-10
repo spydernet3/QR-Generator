@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure QR Code Generator</title>
     <style>
+        /* Same CSS as previous versions */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -145,7 +146,7 @@
 
         function processQRCodeContent(content, password, color, size) {
             try {
-                const encryptedContent = CryptoJS.AES.encrypt(content, password).toString();
+                const encryptedContent = "ENC:" + CryptoJS.AES.encrypt(content, password).toString();
                 createQRCode(encryptedContent, color, size);
             } catch (error) {
                 console.error("Encryption error:", error);
@@ -156,7 +157,7 @@
         function createQRCode(content, color, size) {
             try {
                 const qr = new QRious({
-                    value: "ENC:" + content,
+                    value: content,
                     size: parseInt(size) * 10,
                     level: 'L',
                 });
@@ -207,12 +208,8 @@
         }
 
         function decryptContent(encryptedContent, password) {
-            if (!encryptedContent.startsWith("ENC:")) {
-                alert("Invalid encrypted content format.");
-                return null;
-            }
-            encryptedContent = encryptedContent.substring(4); // Remove "ENC:" prefix
-            const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
+            const content = encryptedContent.replace("ENC:", "");
+            const bytes = CryptoJS.AES.decrypt(content, password);
             return bytes.toString(CryptoJS.enc.Utf8);
         }
 
