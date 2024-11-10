@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure QR Code Generator</title>
+    <title>Secure QR Code Generator - Version 12</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,11 +57,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>Secure QR Code Generator</h1>
+        <h1>Secure QR Code Generator - Version 12</h1>
         <input type="password" id="qrPassword" placeholder="Enter password for encryption">
         <div id="inputContainer">
             <div class="input-group">
                 <input type="text" placeholder="Enter text or URL" class="qrContent">
+                <input type="file" accept="image/*,video/*,.pdf,.doc,.docx" class="qrFile">
                 <button onclick="addContentField()">+</button>
             </div>
         </div>
@@ -97,6 +98,7 @@
             newInputGroup.classList.add('input-group');
             newInputGroup.innerHTML = `
                 <input type="text" placeholder="Enter text or URL" class="qrContent">
+                <input type="file" accept="image/*,video/*,.pdf,.doc,.docx" class="qrFile">
                 <button onclick="removeContentField(this)">-</button>
             `;
             document.getElementById('inputContainer').appendChild(newInputGroup);
@@ -116,9 +118,29 @@
                 return;
             }
 
-            const contentArray = Array.from(document.querySelectorAll('.qrContent')).map(input => input.value);
-            const combinedContent = contentArray.join("\n");
-            processQRCodeContent(combinedContent, password, textColor, textSize);
+            const contentPromises = Array.from(document.querySelectorAll('.input-group')).map(async group => {
+                const textInput = group.querySelector('.qrContent').value;
+                const fileInput = group.querySelector('.qrFile').files[0];
+                if (fileInput) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) { resolve(e.target.result); };
+                        reader.onerror = function() { reject("Error reading file"); };
+                        reader.readAsDataURL(fileInput);
+                    });
+                } else {
+                    return Promise.resolve(textInput);
+                }
+            });
+
+            try {
+                const contentArray = await Promise.all(contentPromises);
+                const combinedContent = contentArray.join("\n");
+                processQRCodeContent(combinedContent, password, textColor, textSize);
+            } catch (error) {
+                console.error("Error processing content:", error);
+                alert("Error processing content. Please try again.");
+            }
         }
 
         function processQRCodeContent(content, password, color, size) {
@@ -132,59 +154,64 @@
         }
 
         function createQRCode(content, color, size) {
-            const qr = new QRious({
-                value: `ENC:${content}`,
-                size: parseInt(size) * 10,
-                level: 'L',
-            });
+            try {
+                const qr = new QRious({
+                    value: content,
+                    size: parseInt(size) * 10,
+                    level: 'L',
+                });
 
-            const qrTableBody = document.getElementById('qrTableBody');
-            const row = qrTableBody.insertRow();
-            const cell1 = row.insertCell(0);
-            const cell2 = row.insertCell(1);
-            const cell3 = row.insertCell(2);
+                const qrTableBody = document.getElementById('qrTableBody');
+                const row = qrTableBody.insertRow();
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                const cell3 = row.insertCell(2);
 
-            cell1.innerHTML = `<button onclick="promptForDecryption('${content}')">View Content</button>`;
-            cell1.style.color = color;
-            cell1.style.fontSize = `${size}px`;
+                cell1.innerHTML = `<button onclick="promptForPassword('${content}')">View Content</button>`;
+                cell1.style.color = color;
+                cell1.style.fontSize = `${size}px`;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = qr.size;
-            canvas.height = qr.size;
-            canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
-            cell2.appendChild(canvas);
+                const canvas = document.createElement('canvas');
+                canvas.width = qr.size;
+                canvas.height = qr.size;
+                canvas.getContext('2d').drawImage(qr.canvas, 0, 0);
+                cell2.appendChild(canvas);
 
-            // Add Download and Delete buttons
-            const downloadBtn = document.createElement('button');
-            downloadBtn.textContent = "Download";
-            downloadBtn.onclick = () => downloadQRCode(canvas);
-            cell3.appendChild(downloadBtn);
+                // Add Download and Delete buttons
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = "Download";
+                downloadBtn.onclick = () => downloadQRCode(canvas);
+                cell3.appendChild(downloadBtn);
 
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = "Delete";
-            deleteBtn.onclick = () => row.remove();
-            cell3.appendChild(deleteBtn);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = "Delete";
+                deleteBtn.onclick = () => row.remove();
+                cell3.appendChild(deleteBtn);
+            } catch (error) {
+                console.error("QR code generation error:", error);
+                alert("Error generating QR code. Please try again.");
+            }
         }
 
-        function promptForDecryption(encryptedContent) {
+        function promptForPassword(encryptedContent) {
             const password = prompt("Enter the password to view the content:");
-            try {
-                const decryptedContent = decryptContent(encryptedContent, password);
-                if (decryptedContent) {
-                    alert("Decrypted Content: " + decryptedContent);
-                } else {
-                    alert("Incorrect password or decryption failed.");
+            if (password) {
+                try {
+                    const decryptedContent = decryptContent(encryptedContent, password);
+                    if (decryptedContent) {
+                        alert("Decrypted Content: " + decryptedContent);
+                    } else {
+                        alert("Incorrect password.");
+                    }
+                } catch (error) {
+                    alert("Error decrypting content. Please try again.");
                 }
-            } catch (error) {
-                console.error("Decryption error:", error);
-                alert("Incorrect password or decryption error.");
+            } else {
+                alert("Password is required to decrypt the content.");
             }
         }
 
         function decryptContent(encryptedContent, password) {
-            if (encryptedContent.startsWith("ENC:")) {
-                encryptedContent = encryptedContent.slice(4); // Remove "ENC:" prefix
-            }
             const bytes = CryptoJS.AES.decrypt(encryptedContent, password);
             return bytes.toString(CryptoJS.enc.Utf8);
         }
